@@ -85,11 +85,19 @@ def turnOffLED():
 
 while True:
     imageFrame = picam2.capture_array()
+    
     detectColour(imageFrame)  # Detect colors in the image
+    
     showLED()
+    
     time.sleep(2)
+    
     cv2.imshow('frame', imageFrame)
+    
     turnOffLED()
+
+    detected_colors.clear()
+    
     if cv2.waitKey(1) == ord('q'):
         break
 
