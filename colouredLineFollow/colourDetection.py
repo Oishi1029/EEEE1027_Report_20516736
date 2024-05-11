@@ -70,6 +70,8 @@ while True:
     cv2.imshow("Green Mask", green_mask)
     cv2.imshow("Blue Mask", blue_mask)
 
+    detected_colors.clear()
+    
     if cv2.waitKey(1) == ord('q'):
         break
 
