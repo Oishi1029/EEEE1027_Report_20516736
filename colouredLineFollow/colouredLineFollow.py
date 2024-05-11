@@ -47,6 +47,7 @@ en2 = PWMOutputDevice(en2_pin)  # Set up a PWM output device for controlling pow
 Kp = 0.0080
 setpoint = 102.5  # Desired distance from the line  # Import specific modules from a library
 
+
 def forward():
     in1.on()
     in2.off()
@@ -59,6 +60,7 @@ def stop():
     in2.on()
     in3.on()
     in4.on()
+
 
 def right():
     in1.on()
@@ -73,9 +75,8 @@ def left():
     in3.on()
     in4.off()
 
-def blackLineFollow():
-    global prev_error, integral, derivative
 
+def blackLineFollow():
     img = picam2.capture_array()
     rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     black_lower = np.array([10, 20, 20], np.uint8)
@@ -113,6 +114,7 @@ def blackLineFollow():
     else:
         stop()
 
+
 def colorLineFollow():
     global detected_colors, preferred_color1, preferred_color2
 
@@ -135,28 +137,31 @@ def colorLineFollow():
         M = cv2.moments(c)
         if M['m00'] != 0:
             cx = int(M['m10'] / M['m00'])
-        else:
-            cx = 0
 
-        if cx <= 40:
-            print("Colour Turn Left!")
-            left()
-            en1.value = 0.65
-            en2.value = 0.65
+            error = cx - setpoint
+            output = Kp * error
 
-        elif 40 < cx < 150:
-            print("Colour On Track!")
-            forward()
-            en1.value = 0.4
-            en2.value = 0.4
-        else:
-            print("Colour Turn Right")
-            right()
-            en1.value = 0.65
-            en2.value = 0.65
+            if cx <= 40:
+                print("Turn Left!")
+                left()
+                en1.value = max(0, min(0.38 - output, 0.75))
+                en2.value = max(0, min(0.38 + output, 0.75))
+            elif cx >= 150:
+                print("Turn Right")
+                right()
+                en1.value = max(0, min(0.38 - output, 0.75))
+                en2.value = max(0, min(0.38 + output, 0.75))
+
+            else:
+                print("On Track!")
+                forward()
+                en1.value = max(0, min(0.35 - output, 0.4))
+                en2.value = max(0, min(0.35 + output, 0.4))
+
     else:
         blackLineFollow()
-        
+
+
 def detectColour(imageFrame):
     global detected_colors
 
@@ -165,7 +170,6 @@ def detectColour(imageFrame):
     red_mask = cv2.inRange(rgbFrame, red_lower, red_upper)
     green_mask = cv2.inRange(rgbFrame, green_lower, green_upper)
     blue_mask = cv2.inRange(rgbFrame, blue_lower, blue_upper)
-
 
     red_mask = cv2.dilate(red_mask, kernel)
     green_mask = cv2.dilate(green_mask, kernel)
@@ -200,25 +204,22 @@ def detectColour(imageFrame):
     cv2.imshow("Blue Mask", blue_mask)
 
 
-
 while True:
     global detected_colors
-    
+
     imageFrame = picam2.capture_array()
-    
+
     detectColour(imageFrame)
-    
+
     colorLineFollow()
-    
+
     cv2.imshow('frame', imageFrame)
-    
+
     detected_colors.clear()
-    
+
     if cv2.waitKey(1) == ord('q'):
         break
 
 # Release the camera and close all OpenCV windows
 picam2.release()
 cv2.destroyAllWindows()
-
-
