@@ -50,4 +50,5 @@ while True:  # Start the main loop for real-time processing
 
 # Cleanup
 print("\n [INFO] Exiting Program and cleanup stuff")
+picam2.release()
 cv2.destroyAllWindows()  # Close all OpenCV windows
